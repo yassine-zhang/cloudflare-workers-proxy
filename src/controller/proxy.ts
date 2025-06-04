@@ -90,13 +90,42 @@ async function rewriteHtmlBody(body: ReadableStream<Uint8Array> | null, baseUrl:
 }
 
 /**
+ * 判断是否已编码
+ */
+function isProbablyEncoded(url: string): boolean {
+  // 如果包含 %，大概率已经 encode 过
+  return /%[0-9A-Fa-f]{2}/.test(url)
+}
+
+/**
+ * 将请求中的额外查询参数合并到目标 URL 上（排除 url 和 rewrite 参数）
+ *
+ * @param c Hono Context 上下文对象
+ * @param urlParam 需要合并参数的原始 URL 字符串
+ * @param excludeKeys 需要排除的参数名数组，默认排除 'url' 和 'rewrite'
+ * @returns 合并后的完整 URL 字符串
+ */
+function mergeExtraQueryToUrl(c: Context, urlParam: string, excludeKeys: string[] = ['url', 'rewrite']): string {
+  const urlObj = new URL(urlParam, 'http://dummy-base') // base 只为解析用
+  const searchParams = new URLSearchParams(urlObj.search)
+  for (const [key, value] of Object.entries(c.req.query())) {
+    if (!excludeKeys.includes(key) && value !== undefined) {
+      searchParams.append(key, value)
+    }
+  }
+  urlObj.search = searchParams.toString()
+  return urlObj.href
+}
+
+/**
  * 代理主处理器
  */
 export const handlerProxy = async (c: Context) => {
-  const urlParam = getProxyUrl(c)
-  if (!urlParam) {
-    return c.json({ error: '缺少 url 参数' }, 400)
-  }
+  let urlParam = getProxyUrl(c)
+
+  if (!urlParam) return c.json({ error: '缺少 url 参数' }, 400)
+  if (!isProbablyEncoded(urlParam)) urlParam = mergeExtraQueryToUrl(c, urlParam)
+
   const rewrite = getRewriteFlag(c)
   const targetUrl = ensureHttpProtocol(urlParam, 'https')
   // console.log('targetUrl', targetUrl)
