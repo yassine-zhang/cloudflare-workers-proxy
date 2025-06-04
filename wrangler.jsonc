@@ -1,8 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "cloudflare-workers-proxy",
-  "main": "src/index.tsx",
-  "compatibility_date": "2025-06-03",
+  "main": "./src/index.tsx",
+  "compatibility_date": "2025-05-25",
   "observability": {
     "enabled": true,
     "head_sampling_rate": 0.1

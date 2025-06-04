@@ -1,5 +1,5 @@
 {
-  "name": "hono-vite",
+  "name": "cloudflare-workers-proxy",
   "type": "module",
   "scripts": {
     "dev": "vite",
